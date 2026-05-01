@@ -58,13 +58,13 @@ export const ChatProvider = ({children}) => {
 
     //function to subscribe to messages for slelcted user
     const subscribeToMessages = async() => {
-        if(!socket) return;
+        if(!socket || !socket.connected) return;
 
         socket.on("newMessage", (newMessage)=> {
-            if(selectedUser && newMessage.senderId === selectedUser._id) {
-                newMessage.seen = true;
-                setMessages((prevMessages)=> [...prevMessages, newMessage])
-                axios.put(`/api/messages/mark/${newMessage._id}`)
+            const isMessageFromSelectedUser = selectedUser && newMessage.senderId === selectedUser._id;
+            if(isMessageFromSelectedUser) {
+                setMessages((prevMessages)=> [...prevMessages, { ...newMessage, seen: true }])
+                axios.put(`/api/messages/mark/${newMessage._id}`).catch(console.error);
             } else {
                 setUnseenMessages((prevUnseenMessages)=> ({
                     ...prevUnseenMessages, [newMessage.senderId] :
@@ -76,13 +76,14 @@ export const ChatProvider = ({children}) => {
 
     //function to unsubscribe from messages
     const unsubscribeFromMessages = ()=> {
-        if(socket) socket.off("newMessage")
+        socket?.off("newMessage")
     }
 
     useEffect(()=> {
         subscribeToMessages();
-        return()=> unsubscribeFromMessages()
-    },[socket,selectedUser])
+
+        return () => unsubscribeFromMessages();
+    },[socket, selectedUser, socket?.connected])
 
     const value = {
         messages, users, selectedUser, getUsers, getMessages, sendMessages,  setSelectedUser, unseenMessages,setUnseenMessages
