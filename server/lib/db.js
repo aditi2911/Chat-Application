@@ -1,11 +1,14 @@
 import mongoose from "mongoose";
 
-//function to connect to the mongodb database
 export const connectDB = async () => {
     try {
-        mongoose.connection.on('connected',()=> console.log('Database connected'))
-        await mongoose.connect(`${process.env.MONGODB_URL}/chat-app`)
+        const conn = await mongoose.connect(process.env.MONGODB_URL, {
+            serverSelectionTimeoutMS: 30000,
+            socketTimeoutMS: 45000,
+        });
+        console.log(`MongoDB Connected: ${conn.connection.host}`);
     } catch (error) {
-          console.log(error) 
+        console.log("MongoDB connection error:", error.message);
+        process.exit(1);
     }
 }
